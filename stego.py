@@ -8,7 +8,7 @@ Only embeds a single secret into a single cover file (PNG) for now.
 
 Todo:
 -functions to encrypt/decrypt the secret (AES256)
--way to take secret as input parameter or read it in frm file
+-way to read secret message in from file
 -Function to partition the secret so that it can be distributed among many cover files
 -Embed other types of data besides text (images, sound, video files)
 -Redundancy or embed a checksum
@@ -133,7 +133,7 @@ def recover(stego_file):  # takes a stego file and recovers the secret from it
 
 def main():
     print "Stego System"
-    secret = "this is a l000000000000000000nger secret"
+    secret = ""
 
     if len(sys.argv) < 3:  # check if there are at least two arguments
         usage()
@@ -141,6 +141,12 @@ def main():
     if sys.argv[1] == "-e":
         # embed secret into file
         print "Embedding secret..."
+
+        if sys.argv[3] == "-s":
+            secret = sys.argv[4]
+        else:
+            usage()
+
         embed(sys.argv[2], secret)
         print "Stego file is output.png"
         print "Finished"

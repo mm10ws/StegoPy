@@ -8,7 +8,7 @@ Only embeds a single secret into a single cover file (PNG) for now.
 
 Todo:
 -functions to encrypt/decrypt the secret (AES256)
--Way to embed how long the secret is so that it can be recovered from stego image
+-way to take secret as input parameter or read it in frm file
 -Function to partition the secret so that it can be distributed among many cover files
 -Embed other types of data besides text (images, sound, video files)
 -Redundancy or embed a checksum
@@ -52,26 +52,34 @@ def embed(cover_file, secret):  # embed a secret into a cover file, creates a ne
 
     b = message_encode(secret)
 
-
     # check to see if the secret can fit, only in the two LSB of every pixel R value.
     # We can also try the LSB of the G and B values as well, but its only R for now
     if len(b) > width * height * 2:
         print("cover image too small to embed secret")
         exit()
 
-    count = 0
+    s_length = '{0:032b}'.format(len(b))
+    count1 = 0
+    count2 = 0
     for i in range(0, width):
         for j in range(0, height):
-            if count < len(b):
+            if 0 <= count1 < 32:  # this embeds the size of the secret into the first 32 bits
+                p_value = image_pix[i, j][0]
+                b_value = list('{0:08b}'.format(p_value))  # convert pixel value to binary
+                b_value[6] = str(s_length[count1])
+                b_value[7] = str(s_length[count1 + 1])
+                stego_pix[i, j] = (int(''.join(b_value), 2), image_pix[i, j][1], image_pix[i, j][2])
+                count1 += 2
+            elif 0 <= count2 < len(b):
                 p_value = image_pix[i, j][0]
                 b_value = list('{0:08b}'.format(p_value))  # convert pixel value to binary
 
                 # Add to the LSB
-                b_value[6] = str(b[count])
-                b_value[7] = str(b[count + 1])
+                b_value[6] = str(b[count2])
+                b_value[7] = str(b[count2 + 1])
 
                 stego_pix[i, j] = (int(''.join(b_value), 2), image_pix[i, j][1], image_pix[i, j][2])
-                count += 2
+                count2 += 2
 
             else:
                 stego_pix[i, j] = (image_pix[i, j][0], image_pix[i, j][1], image_pix[i, j][2])
@@ -86,26 +94,46 @@ def recover(stego_file):  # takes a stego file and recovers the secret from it
     height = stego_image.size[1]
 
     output = []
+    s_length = []
 
-    count = 0
+    count1 = 0
+    count2 = 0
+
+    # get the length of the secret from the first 32 bits
     for i in range(0, width):
         for j in range(0, height):
+            if 0 <= count1 < 32:
+                p_value = image_pix[i, j][0]
+                b_value = list('{0:08b}'.format(p_value))  # convert pixel value to binary
+                # take the 2 LSB of every pixel as part of the length
+                s_length.append(int(b_value[6]))
+                s_length.append(int(b_value[7]))
+                count1 += 2
 
-            if count < 128:  # find a way to figure out secret size, hardcoded for now
+            else:
+                break
+
+    s_length_int = int(''.join(str(x) for x in s_length), 2)
+    # print(s_length_int)
+    for i in range(0, width):
+        for j in range(0, height):
+            if 32 <= count2 < s_length_int + 32:
                 p_value = image_pix[i, j][0]
                 b_value = list('{0:08b}'.format(p_value))  # convert pixel value to binary
 
                 # take the 2 LSB of every pixel as part of the secret
                 output.append(int(b_value[6]))
                 output.append(int(b_value[7]))
-                count += 2
+                count2 += 2
+            else:
+                count2 += 2
 
     return message_decode(output)  # return the recovered secret
 
 
 def main():
     print "Stego System"
-    secret = "this is a secret"  # this string is 16 chars long, 1 Byte * 16 = 128 bits, This is hardcoded for now
+    secret = "this is a l000000000000000000nger secret"
 
     if len(sys.argv) < 3:  # check if there are at least two arguments
         usage()

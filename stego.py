@@ -1,6 +1,7 @@
 import sys
 import Image  # python image library
 
+
 """
 Distributed Steganography
 
@@ -8,9 +9,7 @@ Only embeds a single secret into a single cover file (PNG) for now.
 
 Todo:
 -functions to encrypt/decrypt the secret (AES256)
--way to read secret message in from file
 -Function to partition the secret so that it can be distributed among many cover files
--Embed other types of data besides text (images, sound, video files)
 -Redundancy or embed a checksum
 
 
@@ -44,6 +43,9 @@ def message_decode(message):  # decodes an array of bits to a string
 
 def embed(cover_file, secret):  # embed a secret into a cover file, creates a new stego image
     cover_image = Image.open(cover_file)  # open the cover image
+    if cover_image.mode != "RGB":  # convert to RGB mode
+        cover_image = cover_image.convert("RGB")
+
     image_pix = cover_image.load()  # get a 2d array of pixels, each element is a tuple (r,g,b)
     width = cover_image.size[0]
     height = cover_image.size[1]
@@ -55,7 +57,7 @@ def embed(cover_file, secret):  # embed a secret into a cover file, creates a ne
     # check to see if the secret can fit, only in the two LSB of every pixel R value.
     # We can also try the LSB of the G and B values as well, but its only R for now
     if len(b) > width * height * 2:
-        print("cover image too small to embed secret")
+        print("cover image too small to embed secret: secret: " + str(len(b)) + " bits" + " cover: " + str(width * height * 2) + " bits")
         exit()
 
     s_length = '{0:032b}'.format(len(b))
@@ -144,6 +146,11 @@ def main():
 
         if sys.argv[3] == "-s":
             secret = sys.argv[4]
+        elif sys.argv[3] == "-f":
+            # read file in
+            f_path = sys.argv[4]
+            f = open(f_path, "rb")
+            secret = f.read()
         else:
             usage()
 
@@ -156,7 +163,19 @@ def main():
         print "Recovering secret..."
         stext = recover(sys.argv[2])
         print "Finished"
-        print "The secret is: " + stext
+
+        if len(sys.argv) > 3:
+            if sys.argv[3] == "-f":
+                fname = sys.argv[4]
+                f = open(fname, 'wb')
+                f.write(stext)
+                f.close()
+
+            else:
+                usage()
+
+        else:
+            print "The secret is: " + stext
 
     else:
         usage()

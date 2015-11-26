@@ -1,7 +1,6 @@
 import sys
 import Image  # python image library
 
-
 """
 Distributed Steganography
 
@@ -57,7 +56,8 @@ def embed(cover_file, secret):  # embed a secret into a cover file, creates a ne
     # check to see if the secret can fit, only in the two LSB of every pixel R value.
     # We can also try the LSB of the G and B values as well, but its only R for now
     if len(b) > width * height * 2:
-        print("cover image too small to embed secret: secret: " + str(len(b)) + " bits" + " cover: " + str(width * height * 2) + " bits")
+        print("cover image too small to embed secret: secret: " + str(len(b)) + " bits" + " cover: " + str(
+            width * height * 2) + " bits")
         exit()
 
     s_length = '{0:032b}'.format(len(b))

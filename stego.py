@@ -1,5 +1,7 @@
 import sys
 import Image  # python image library
+import Crypto #PyCrypto library
+
 
 """
 Distributed Steganography

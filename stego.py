@@ -2,6 +2,7 @@ import sys
 import Image  # python image library
 from Crypto import Random  # PyCrypto randomizer library
 from Crypto.Cipher import AES  # PyCrypto AES encryption library
+import binascii
 
 """
 Distributed Steganography
@@ -137,7 +138,7 @@ def recover(stego_file):  # takes a stego file and recovers the secret from it
 
 def encrypt(message):
     key = generate_key()  # creates a cryptographically secure random key of 128 bits
-    message = message + b"\0" * (
+    message += b"\0" * (
     AES.block_size - len(message) % AES.block_size)  # pads the message with null characters
     iv = Random.new().read(AES.block_size)  # initialization vector of size AES.block_size = 16
     cipher = AES.new(key, AES.MODE_CFB, iv)  # the cipher object which defines how to encrypt data
@@ -155,10 +156,9 @@ def decrypt(cipher_message, key):
 
 def generate_key():
     key = Random.get_random_bytes(16)  # creates a cryptographically secure random key of 128 bits
-    print "key type: " + str(type(key))
-    # key = b'\xbf\xc0\x85)\x10nc\x94\x02)j\xdf\xcb\xc4\x94\x9d(\x9e[EX\xc8\xd5\xbfI{\xa2$\x05(\xd5\x18'
+
     print "This is the random key assigned to your message, it must be used to decrypt your message."
-    print "Key: " + key
+    print "key: " + binascii.hexlify(key)
     return key
 
 
@@ -176,7 +176,6 @@ def main():
         if sys.argv[3] == "-s":
             secret = sys.argv[4]
             secret = encrypt(secret)
-            print "secret message: " + secret
         elif sys.argv[3] == "-f":
             # read file in
             f_path = sys.argv[4]
@@ -186,7 +185,6 @@ def main():
         else:
             usage()
 
-        print "sys arg 2: " + sys.argv[2]
         embed(sys.argv[2], secret)
         print "Stego file is output.png"
         print "Finished"
@@ -196,6 +194,7 @@ def main():
         print "Recovering secret..."
         stext = recover(sys.argv[2])
         key = sys.argv[3]
+        key = binascii.unhexlify(key)
         stext = decrypt(stext, key)
         print "Finished"
 

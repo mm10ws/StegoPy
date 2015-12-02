@@ -1,6 +1,7 @@
 import sys
 import Image  # python image library
-import Crypto #PyCrypto library
+from Crypto import Random #PyCrypto randomizer library
+from Crypto.Cipher import AES #PyCrypto AES encryption library
 
 
 """
@@ -134,6 +135,27 @@ def recover(stego_file):  # takes a stego file and recovers the secret from it
 
     return message_decode(output)  # return the recovered secret
 
+def encrypt(message):
+    key = generate_key() #creates a cryptographically secure random key of 128 bits
+    message = message + b"\0" * (AES.block_size - len(message) % AES.block_size) #pads the message with null characters
+    iv = Random.new().read(AES.block_size) #initialization vector of size AES.block_size = 16
+    cipher = AES.new(key, AES.MODE_CFB, iv) #the cipher object which defines how to encrypt data
+    cipher_message = iv + cipher.encrypt(message) #appends the init vector and the scrambled message
+    #print type(cipher_message)
+    return cipher_message
+
+def decrypt(cipher_message, key):
+    iv = cipher_message[:AES.block_size] #recovers the init vector from the front of the cipher_message
+    cipher = AES.new(key, AES.MODE_CFB, iv) #reconstructs the cipher
+    message = cipher.decrypt(cipher_message[AES.block_size:]) #decrypts to reveal the padded message
+    return message.rstrip(b"\0") #strips the trailing null characters used for padding
+
+def generate_key():
+    #key = Random.random.getrandbits(128) #creates a cryptographically secure random key of 128 bits
+    key = b'\xbf\xc0\x85)\x10nc\x94\x02)j\xdf\xcb\xc4\x94\x9d(\x9e[EX\xc8\xd5\xbfI{\xa2$\x05(\xd5\x18'
+    print "This is the random key assigned to your message, it must be used to decrypt your message."
+    print "Key: " + key
+    return key
 
 def main():
     print "Stego System"
@@ -148,14 +170,18 @@ def main():
 
         if sys.argv[3] == "-s":
             secret = sys.argv[4]
+            secret = encrypt(secret)
+            print "secret message: " + secret
         elif sys.argv[3] == "-f":
             # read file in
             f_path = sys.argv[4]
             f = open(f_path, "rb")
             secret = f.read()
+            secret = encrypt(secret)
         else:
             usage()
 
+        print "sys arg 2: " + sys.argv[2]
         embed(sys.argv[2], secret)
         print "Stego file is output.png"
         print "Finished"
@@ -164,11 +190,12 @@ def main():
         # recover secret from file
         print "Recovering secret..."
         stext = recover(sys.argv[2])
+        stext = decrypt(stext, sys.argv[3])
         print "Finished"
 
-        if len(sys.argv) > 3:
-            if sys.argv[3] == "-f":
-                fname = sys.argv[4]
+        if len(sys.argv) > 4:
+            if sys.argv[4] == "-f":
+                fname = sys.argv[5]
                 f = open(fname, 'wb')
                 f.write(stext)
                 f.close()
@@ -182,5 +209,5 @@ def main():
     else:
         usage()
 
-
+#encrypt("this is a secret message")
 main()

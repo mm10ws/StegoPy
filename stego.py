@@ -1,8 +1,7 @@
 import sys
 import Image  # python image library
-from Crypto import Random #PyCrypto randomizer library
-from Crypto.Cipher import AES #PyCrypto AES encryption library
-
+from Crypto import Random  # PyCrypto randomizer library
+from Crypto.Cipher import AES  # PyCrypto AES encryption library
 
 """
 Distributed Steganography
@@ -135,27 +134,33 @@ def recover(stego_file):  # takes a stego file and recovers the secret from it
 
     return message_decode(output)  # return the recovered secret
 
+
 def encrypt(message):
-    key = generate_key() #creates a cryptographically secure random key of 128 bits
-    message = message + b"\0" * (AES.block_size - len(message) % AES.block_size) #pads the message with null characters
-    iv = Random.new().read(AES.block_size) #initialization vector of size AES.block_size = 16
-    cipher = AES.new(key, AES.MODE_CFB, iv) #the cipher object which defines how to encrypt data
-    cipher_message = iv + cipher.encrypt(message) #appends the init vector and the scrambled message
-    #print type(cipher_message)
+    key = generate_key()  # creates a cryptographically secure random key of 128 bits
+    message = message + b"\0" * (
+    AES.block_size - len(message) % AES.block_size)  # pads the message with null characters
+    iv = Random.new().read(AES.block_size)  # initialization vector of size AES.block_size = 16
+    cipher = AES.new(key, AES.MODE_CFB, iv)  # the cipher object which defines how to encrypt data
+    cipher_message = iv + cipher.encrypt(message)  # appends the init vector and the scrambled message
+    # print type(cipher_message)
     return cipher_message
 
+
 def decrypt(cipher_message, key):
-    iv = cipher_message[:AES.block_size] #recovers the init vector from the front of the cipher_message
-    cipher = AES.new(key, AES.MODE_CFB, iv) #reconstructs the cipher
-    message = cipher.decrypt(cipher_message[AES.block_size:]) #decrypts to reveal the padded message
-    return message.rstrip(b"\0") #strips the trailing null characters used for padding
+    iv = cipher_message[:AES.block_size]  # recovers the init vector from the front of the cipher_message
+    cipher = AES.new(key, AES.MODE_CFB, iv)  # reconstructs the cipher
+    message = cipher.decrypt(cipher_message[AES.block_size:])  # decrypts to reveal the padded message
+    return message.rstrip(b"\0")  # strips the trailing null characters used for padding
+
 
 def generate_key():
-    #key = Random.random.getrandbits(128) #creates a cryptographically secure random key of 128 bits
-    key = b'\xbf\xc0\x85)\x10nc\x94\x02)j\xdf\xcb\xc4\x94\x9d(\x9e[EX\xc8\xd5\xbfI{\xa2$\x05(\xd5\x18'
+    key = Random.get_random_bytes(16)  # creates a cryptographically secure random key of 128 bits
+    print "key type: " + str(type(key))
+    # key = b'\xbf\xc0\x85)\x10nc\x94\x02)j\xdf\xcb\xc4\x94\x9d(\x9e[EX\xc8\xd5\xbfI{\xa2$\x05(\xd5\x18'
     print "This is the random key assigned to your message, it must be used to decrypt your message."
     print "Key: " + key
     return key
+
 
 def main():
     print "Stego System"
@@ -190,7 +195,8 @@ def main():
         # recover secret from file
         print "Recovering secret..."
         stext = recover(sys.argv[2])
-        stext = decrypt(stext, sys.argv[3])
+        key = sys.argv[3]
+        stext = decrypt(stext, key)
         print "Finished"
 
         if len(sys.argv) > 4:
@@ -209,5 +215,6 @@ def main():
     else:
         usage()
 
-#encrypt("this is a secret message")
+
+# encrypt("this is a secret message")
 main()

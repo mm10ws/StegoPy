@@ -1,17 +1,14 @@
-import sys
+import binascii
+
 import Image  # python image library
 from Crypto import Random  # PyCrypto randomizer library
 from Crypto.Cipher import AES  # PyCrypto AES encryption library
-import binascii
-import math
 
 """
 Distributed Steganography
 
-Only embeds a single secret into a single cover file (PNG) for now.
 
 Todo:
--Function to partition the secret so that it can be distributed among many cover files
 -Redundancy or embed a checksum
 
 
@@ -59,8 +56,10 @@ def embed(cover_file, secret):  # embed a secret into a cover file, creates a ne
     # check to see if the secret can fit, only in the two LSB of every pixel R value.
     # We can also try the LSB of the G and B values as well, but its only R for now
     if len(b) > width * height * 2:
-        print("cover image too small to embed secret: secret: " + str(len(b)) + " bits" + " cover: " + str(
-            width * height * 2) + " bits")
+        print(
+            "cover image " + cover_file + " too small to embed secret: secret: " + str(
+                len(b)) + " bits" + " cover: " + str(
+                width * height * 2) + " bits")
         exit()
 
     s_length = '{0:032b}'.format(len(b))
@@ -89,7 +88,7 @@ def embed(cover_file, secret):  # embed a secret into a cover file, creates a ne
             else:
                 stego_pix[i, j] = (image_pix[i, j][0], image_pix[i, j][1], image_pix[i, j][2])
 
-    stego_image.save("output.png")
+    stego_image.save("stego_" + cover_file)
 
 
 def recover(stego_file):  # takes a stego file and recovers the secret from it
@@ -119,7 +118,6 @@ def recover(stego_file):  # takes a stego file and recovers the secret from it
                 break
 
     s_length_int = int(''.join(str(x) for x in s_length), 2)
-    # print(s_length_int)
     for i in range(0, width):
         for j in range(0, height):
             if 32 <= count2 < s_length_int + 32:
@@ -139,7 +137,7 @@ def recover(stego_file):  # takes a stego file and recovers the secret from it
 def encrypt(message):
     key = generate_key()  # creates a cryptographically secure random key of 128 bits
     message += b"\0" * (
-    AES.block_size - len(message) % AES.block_size)  # pads the message with null characters
+        AES.block_size - len(message) % AES.block_size)  # pads the message with null characters
     iv = Random.new().read(AES.block_size)  # initialization vector of size AES.block_size = 16
     cipher = AES.new(key, AES.MODE_CFB, iv)  # the cipher object which defines how to encrypt data
     cipher_message = iv + cipher.encrypt(message)  # appends the init vector and the scrambled message
@@ -170,8 +168,7 @@ def split_string(input_string, num_splits):
         print "There are more cover files than secret length"
         return temp
     else:
-        # int(math.ceil(float(len(input))/float(num_splits)))
-        block = len(input_string)/num_splits
+        block = len(input_string) / num_splits
         for i in range(0, num_splits):
             block_start = i * block
             block_end = i * block + block
@@ -179,7 +176,6 @@ def split_string(input_string, num_splits):
                 temp.append(input_string[block_start:])
             else:
                 temp.append(input_string[block_start:block_end])
-    print temp
     return temp
 
 
@@ -190,8 +186,6 @@ def main():
     fileorstring = ""
     file_count = 1
     files = []
-
-    split_string("this is a long string", 10)
 
     while True:
         mode = raw_input("Operation mode (encode/decode): ")
@@ -205,7 +199,7 @@ def main():
 
     print "Please enter the names of the files to " + mode + ". When finished enter \"done\"."
     while True:
-        temp = raw_input("Enter the name file " + str(file_count) + ": ")
+        temp = raw_input("Enter \"done\" or the name of file " + str(file_count) + ": ")
 
         if temp == "done":
             break
@@ -221,76 +215,31 @@ def main():
             f_path = raw_input("Enter the secret file's name: ")
             f = open(f_path, "rb")
             secret = f.read()
+            f.close()
             secret = encrypt(secret)
 
+        split_secret = split_string(secret, len(files))
 
+        for i in range(0, len(files)):
+            embed(files[i], split_secret[i])
 
+    else:
+        key = raw_input("Enter the key: ")
+        key = binascii.unhexlify(key)
+        stext = ""
 
+        for i in range(0, len(files)):
+            stext += recover(files[i])
 
+        stext = decrypt(stext, key)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    # if len(sys.argv) < 3:  # check if there are at least two arguments
-    #     usage()
-    #
-    # if sys.argv[1] == "-e":
-    #     # embed secret into file
-    #     print "Embedding secret..."
-    #
-    #     if sys.argv[3] == "-s":
-    #         secret = sys.argv[4]
-    #         secret = encrypt(secret)
-    #     elif sys.argv[3] == "-f":
-    #         # read file in
-    #         f_path = sys.argv[4]
-    #         f = open(f_path, "rb")
-    #         secret = f.read()
-    #         secret = encrypt(secret)
-    #     else:
-    #         usage()
-    #
-    #     embed(sys.argv[2], secret)
-    #     print "Stego file is output.png"
-    #     print "Finished"
-    #
-    # elif sys.argv[1] == "-r":
-    #     # recover secret from file
-    #     print "Recovering secret..."
-    #     stext = recover(sys.argv[2])
-    #     key = sys.argv[3]
-    #     key = binascii.unhexlify(key)
-    #     stext = decrypt(stext, key)
-    #     print "Finished"
-    #
-    #     if len(sys.argv) > 4:
-    #         if sys.argv[4] == "-f":
-    #             fname = sys.argv[5]
-    #             f = open(fname, 'wb')
-    #             f.write(stext)
-    #             f.close()
-    #
-    #         else:
-    #             usage()
-    #
-    #     else:
-    #         print "The secret is: " + stext
-    #
-    # else:
-    #     usage()
-
+        if fileorstring == "string":
+            print "The secret is: " + stext
+        else:
+            fname = raw_input("Enter the name of the output file: ")
+            f = open(fname, 'wb')
+            f.write(stext)
+            f.close()
 
 
 main()

@@ -10,7 +10,6 @@ Distributed Steganography
 Only embeds a single secret into a single cover file (PNG) for now.
 
 Todo:
--functions to encrypt/decrypt the secret (AES256)
 -Function to partition the secret so that it can be distributed among many cover files
 -Redundancy or embed a checksum
 
@@ -143,7 +142,6 @@ def encrypt(message):
     iv = Random.new().read(AES.block_size)  # initialization vector of size AES.block_size = 16
     cipher = AES.new(key, AES.MODE_CFB, iv)  # the cipher object which defines how to encrypt data
     cipher_message = iv + cipher.encrypt(message)  # appends the init vector and the scrambled message
-    # print type(cipher_message)
     return cipher_message
 
 
@@ -163,57 +161,109 @@ def generate_key():
 
 
 def main():
-    print "Stego System"
+    print "Distributed Stego System"
     secret = ""
+    mode = ""
+    fileorstring = ""
+    file_count = 1
+    files = []
 
-    if len(sys.argv) < 3:  # check if there are at least two arguments
-        usage()
+    while True:
+        mode = raw_input("Operation mode (encode/decode): ")
+        if mode == "encode" or mode == "decode":
+            break
 
-    if sys.argv[1] == "-e":
-        # embed secret into file
-        print "Embedding secret..."
+    while True:
+        fileorstring = raw_input("Secret Type (string/file): ")
+        if fileorstring == "string" or fileorstring == "file":
+            break
 
-        if sys.argv[3] == "-s":
-            secret = sys.argv[4]
-            secret = encrypt(secret)
-        elif sys.argv[3] == "-f":
-            # read file in
-            f_path = sys.argv[4]
+    print "Please enter the names of the files to " + mode + ". When finished enter \"done\"."
+    while True:
+        temp = raw_input("Enter the name file " + str(file_count) + ": ")
+
+        if temp == "done":
+            break
+
+        files.append(temp)
+        file_count += 1
+
+    if mode == "encode":
+        if fileorstring == "string":
+            secret = raw_input("Enter the secret string: ")
+        else:
+            f_path = raw_input("Enter the secret file's name: ")
             f = open(f_path, "rb")
             secret = f.read()
-            secret = encrypt(secret)
-        else:
-            usage()
-
-        embed(sys.argv[2], secret)
-        print "Stego file is output.png"
-        print "Finished"
-
-    elif sys.argv[1] == "-r":
-        # recover secret from file
-        print "Recovering secret..."
-        stext = recover(sys.argv[2])
-        key = sys.argv[3]
-        key = binascii.unhexlify(key)
-        stext = decrypt(stext, key)
-        print "Finished"
-
-        if len(sys.argv) > 4:
-            if sys.argv[4] == "-f":
-                fname = sys.argv[5]
-                f = open(fname, 'wb')
-                f.write(stext)
-                f.close()
-
-            else:
-                usage()
-
-        else:
-            print "The secret is: " + stext
-
-    else:
-        usage()
 
 
-# encrypt("this is a secret message")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    # if len(sys.argv) < 3:  # check if there are at least two arguments
+    #     usage()
+    #
+    # if sys.argv[1] == "-e":
+    #     # embed secret into file
+    #     print "Embedding secret..."
+    #
+    #     if sys.argv[3] == "-s":
+    #         secret = sys.argv[4]
+    #         secret = encrypt(secret)
+    #     elif sys.argv[3] == "-f":
+    #         # read file in
+    #         f_path = sys.argv[4]
+    #         f = open(f_path, "rb")
+    #         secret = f.read()
+    #         secret = encrypt(secret)
+    #     else:
+    #         usage()
+    #
+    #     embed(sys.argv[2], secret)
+    #     print "Stego file is output.png"
+    #     print "Finished"
+    #
+    # elif sys.argv[1] == "-r":
+    #     # recover secret from file
+    #     print "Recovering secret..."
+    #     stext = recover(sys.argv[2])
+    #     key = sys.argv[3]
+    #     key = binascii.unhexlify(key)
+    #     stext = decrypt(stext, key)
+    #     print "Finished"
+    #
+    #     if len(sys.argv) > 4:
+    #         if sys.argv[4] == "-f":
+    #             fname = sys.argv[5]
+    #             f = open(fname, 'wb')
+    #             f.write(stext)
+    #             f.close()
+    #
+    #         else:
+    #             usage()
+    #
+    #     else:
+    #         print "The secret is: " + stext
+    #
+    # else:
+    #     usage()
+
+
+
 main()

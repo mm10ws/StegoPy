@@ -3,6 +3,7 @@ import Image  # python image library
 from Crypto import Random  # PyCrypto randomizer library
 from Crypto.Cipher import AES  # PyCrypto AES encryption library
 import binascii
+import math
 
 """
 Distributed Steganography
@@ -160,6 +161,28 @@ def generate_key():
     return key
 
 
+def split_string(input_string, num_splits):
+    temp = []
+    if num_splits <= 0:
+        print "Error: non-positive number of splits"
+        return temp
+    if len(input_string) < num_splits:
+        print "There are more cover files than secret length"
+        return temp
+    else:
+        # int(math.ceil(float(len(input))/float(num_splits)))
+        block = len(input_string)/num_splits
+        for i in range(0, num_splits):
+            block_start = i * block
+            block_end = i * block + block
+            if i == num_splits - 1:
+                temp.append(input_string[block_start:])
+            else:
+                temp.append(input_string[block_start:block_end])
+    print temp
+    return temp
+
+
 def main():
     print "Distributed Stego System"
     secret = ""
@@ -167,6 +190,8 @@ def main():
     fileorstring = ""
     file_count = 1
     files = []
+
+    split_string("this is a long string", 10)
 
     while True:
         mode = raw_input("Operation mode (encode/decode): ")
@@ -191,10 +216,12 @@ def main():
     if mode == "encode":
         if fileorstring == "string":
             secret = raw_input("Enter the secret string: ")
+            secret = encrypt(secret)
         else:
             f_path = raw_input("Enter the secret file's name: ")
             f = open(f_path, "rb")
             secret = f.read()
+            secret = encrypt(secret)
 
 
 

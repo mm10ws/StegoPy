@@ -15,11 +15,6 @@ Todo:
 """
 
 
-def usage():
-    print "Usage: [-e or -r] [name of input file]"
-    exit()
-
-
 def message_encode(message):  # encodes a string into an array of bits
     message_bytes = []
 
@@ -159,7 +154,7 @@ def generate_key():
     return key
 
 
-def split_string(input_string, num_splits):
+def split_string(input_string, num_splits):  # splits the input string into n parts
     temp = []
     if num_splits <= 0:
         print "Error: non-positive number of splits"
@@ -197,7 +192,7 @@ def main():
         if fileorstring == "string" or fileorstring == "file":
             break
 
-    print "Please enter the names of the files to " + mode + ". When finished enter \"done\"."
+    print "Please enter the names of the cover or stego files files that will be used to " + mode + ". When finished enter \"done\"."
     while True:
         temp = raw_input("Enter \"done\" or the name of file " + str(file_count) + ": ")
 
@@ -220,17 +215,22 @@ def main():
 
         split_secret = split_string(secret, len(files))
 
-        for i in range(0, len(files)):
+        print "Encoding secret, please wait..."
+        for i in range(0, len(files)):  # distributed encode
             embed(files[i], split_secret[i])
+
+        print "finished"
 
     else:
         key = raw_input("Enter the key: ")
         key = binascii.unhexlify(key)
         stext = ""
 
-        for i in range(0, len(files)):
+        print "Decoding, please wait..."
+        for i in range(0, len(files)):  # distributed decode
             stext += recover(files[i])
 
+        print "finished"
         stext = decrypt(stext, key)
 
         if fileorstring == "string":
